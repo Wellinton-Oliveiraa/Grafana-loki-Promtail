@@ -1,0 +1,55 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://localhost:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      - action: labelmap
+        regex: __meta_docker_container_label_(.+)
+    
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: time
+            level: level
+            message: msg
+      - labels:
+          level:
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+      
+      # Filtrar apenas logs com palavras-chave específicas
+      - match:
+          selector: '{job="docker"}'
+          stages:
+            - regex:
+                expression: ".*(error|success|warning|critical|failed|completed).*"
+            - output:
+                source: message
+
+      # Exemplo de filtro para um contêiner específico
+      - match:
+          selector: '{container="nome-do-seu-container", job="docker"}'
+          stages:
+            - regex:
+                expression: "(?P<filtered_log>.*test-logs.*)"
+            - output:
+                source: filtered_log
+
+      # Filtro geral para todos os logs que passaram pelos filtros anteriores
+      - output:
+          source: message

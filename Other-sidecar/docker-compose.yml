@@ -1,0 +1,38 @@
+# version: '3'
+
+# services:
+#   promtail:
+#     image: grafana/promtail:2.8.0
+#     volumes:
+#       - /var/lib/docker/containers:/var/lib/docker/containers:ro
+#       - /var/run/docker.sock:/var/run/docker.sock:ro
+#       - ./promtail-config.yaml:/etc/promtail/config.yaml:ro
+#     command: -config.file=/etc/promtail/config.yaml
+#     networks:
+#       - loki
+# networks:
+#   loki:
+#     external: true
+
+
+# # criar a rede loki
+# # docker network create loki
+
+
+version: '3'
+
+services:
+  promtail:
+    image: grafana/promtail:2.8.0
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./promtail-config.yaml:/etc/promtail/config.yaml:ro
+    command: -config.file=/etc/promtail/config.yaml
+    networks:
+      - loki
+
+networks:
+  loki:
+    driver: bridge
+    name: loki  # Isso garante que a rede será criada com o nome 'loki'
